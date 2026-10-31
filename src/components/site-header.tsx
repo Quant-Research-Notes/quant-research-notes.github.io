@@ -1,0 +1,74 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { SECTIONS, hrefOf } from "@/lib/sections";
+import { SITE_NAME_HEAD, SITE_NAME_TAIL } from "@/lib/brand";
+
+/*  Sticky nav across the real routes.
+ *
+ *  Active state comes from the pathname rather than a scroll observer, because
+ *  the sections are pages now — the URL already knows where the reader is, and
+ *  anything else would be a second source of truth that can disagree with it.
+ */
+/*  `trailingSlash: true` means usePathname() reports "/results/" while the
+    section list holds "/results". Comparing them raw matched only Home, so
+    every other page lost its underline. Normalise both ends.             */
+const norm = (p: string) => (p !== "/" && p.endsWith("/") ? p.slice(0, -1) : p);
+
+export function SiteHeader() {
+  const path = norm(usePathname());
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-border bg-[color-mix(in_oklab,var(--background)_82%,transparent)] backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:gap-6 sm:px-8">
+        <Link
+          href="/"
+          className="shrink-0 text-sm font-semibold tracking-tight"
+          aria-label="Home"
+        >
+          <span className="grad-primary-text">{SITE_NAME_HEAD}</span>
+          <span className="hidden text-muted-foreground min-[480px]:inline">{SITE_NAME_TAIL}</span>
+        </Link>
+
+        <nav
+          data-tour="nav"
+          aria-label="Sections"
+          className="-mx-2 ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto px-2
+                     [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {SECTIONS.map((s) => {
+            const href = hrefOf(s);
+            const on = path === norm(href);
+            return (
+              <Link
+                key={s.slug}
+                href={href}
+                aria-current={on ? "page" : undefined}
+                className={[
+                  "relative whitespace-nowrap rounded-md px-2 py-1.5 text-[13px] transition-colors sm:px-3",
+                  on
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+              >
+                <span className="sm:hidden">{s.short ?? s.label}</span>
+                <span className="hidden sm:inline">{s.label}</span>
+                {/*  The only accent in the bar, so the eye tracks exactly one
+                    thing. */}
+                <span
+                  aria-hidden
+                  className={[
+                    "grad-primary absolute inset-x-2 -bottom-px sm:inset-x-3 h-0.5 rounded-full transition-opacity",
+                    on ? "opacity-100" : "opacity-0",
+                  ].join(" ")}
+                />
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </header>
+  );
+}
